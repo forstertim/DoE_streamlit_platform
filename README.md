@@ -1,8 +1,8 @@
 # Design of Experiments platform 🚀
 
-Use the following link to access the Design of experiments (DoE) platform on Streamlit.
+Use the following link to access the Design of experiments (DoE) platform on Streamlit:
 
-[...]
+[Open App on Streamlit cloud](https://doeplatform.streamlit.app/) (will open link: doeplatform.streamlit.app)
 
 ## Implementation 💻
 The platform incorporates two options to create either a space-filling design (using a Latin Hypercube Sampling - LHS) approach, or a D-optimal design. 
