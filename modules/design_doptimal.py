@@ -848,7 +848,7 @@ class DOOptimalDesigner(DesignerBaseClass):
     # =====================
     # Utilities
     # =====================
-    def get_selected_dataframe(self, indices: List[int]) -> pd.DataFrame:
+    def get_selected_dataframe(self, indices: List[int] = None) -> pd.DataFrame:
         """Return a DataFrame of candidates corresponding to the selected indices.
 
         Parameters
@@ -861,7 +861,12 @@ class DOOptimalDesigner(DesignerBaseClass):
         pandas.DataFrame
             Subset of candidate DataFrame containing only selected rows.
         """
-
+        if indices is not None:
+            # Store chosen indices
+            self.indices = indices
+        else:
+            indices = self.indices
+        # Return chosen design 
         if self.cand_df is None:
             raise RuntimeError("Candidates not generated yet")
         return self.cand_df.iloc[sorted(indices)].reset_index(drop=True)
@@ -877,7 +882,7 @@ class DOOptimalDesigner(DesignerBaseClass):
 
         if self.cand_df is None:
             raise RuntimeError("Candidates not generated yet")
-        return self.cand_df
+        return self.get_selected_dataframe()
 
     def _get_metadata(self) -> dict:
         """Return metadata about the current designer configuration.
