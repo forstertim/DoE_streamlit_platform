@@ -174,8 +174,8 @@ with st.sidebar.expander("Change defaults", expanded=False):
             "Additional random samples",
             min_value=0,
             max_value=50000,
-            value=2000,
-            step=1000,
+            value=1500,
+            step=200,
             help="""
                 A full-factorial design will be generated, where additional random \
                 samples might be added to increase the potential of getting a better design.
@@ -217,10 +217,10 @@ with st.sidebar.expander("Change defaults", expanded=False):
         # -----------------------------------
         elif algo_type == "Genetic Algorithm (GA)":
             ga_generations = st.number_input(
-                "GA generations", min_value=50, max_value=2000, value=500, step=50
+                "GA generations", min_value=50, max_value=4000, value=1500, step=100
             )
             ga_pop_size = st.number_input(
-                "GA population size", min_value=10, max_value=500, value=100, step=10
+                "GA population size", min_value=10, max_value=500, value=150, step=10
             )
             ga_crossover_rate = st.number_input(
                 "GA crossover rate",
@@ -230,7 +230,7 @@ with st.sidebar.expander("Change defaults", expanded=False):
                 step=0.01,
             )
             ga_mutation_rate = st.number_input(
-                "GA mutation rate", min_value=0.01, max_value=1.00, value=0.1, step=0.01
+                "GA mutation rate", min_value=0.01, max_value=1.00, value=0.2, step=0.01
             )
 
     # Advanced settings for LHS

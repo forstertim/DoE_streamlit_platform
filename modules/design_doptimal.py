@@ -12,6 +12,7 @@ from typing import List, Tuple, Optional
 import numpy as np
 import pandas as pd
 import random
+from pyDOE3 import fullfact
 
 from modules.design_base import DesignerBaseClass
 
@@ -218,69 +219,81 @@ class DOOptimalDesigner(DesignerBaseClass):
         # ---------------------------
         if include_full_factorial:
             factorial_candidates = []
-            import itertools
 
-            # Continuous factors on a grid
+            # Prepare continuous grids and level counts 
             if len(cont_bounds) > 0:
-                grids = [
-                    np.linspace(lo, hi, self.cont_grid_points) for lo, hi in cont_bounds
-                ]
+                cont_grids = [np.linspace(lo, hi, int(self.cont_grid_points)) for lo, hi in cont_bounds]
+                cont_levels = [len(g) for g in cont_grids]
             else:
-                grids = [[None]]  # dummy iterable
+                cont_grids = []
+                cont_levels = []
 
-            # Categorical factors
+            # Prepare categorical level lists and counts
             if self.cat_defs:
                 cat_grids = [levels for _, levels in self.cat_defs]
+                cat_levels = [len(levels) for levels in cat_grids]
             else:
-                cat_grids = [[None]]
+                cat_grids = []
+                cat_levels = []
 
-            # Mixture lattice
+            # Build level-count list for pydoe3.fullfact
+            # We only pass integer number of levels per factor to fullfact
+            level_counts = cont_levels + cat_levels  # order: continuous first, then categorical
+
+            # Generate factorial index matrix (each row: one combination of indices)
+            if len(level_counts) > 0:
+                ff_idx = fullfact(level_counts)  # shape (n_runs, n_factors); values 0..levels-1
+                # fullfact returns floats; cast to int for indexing
+                ff_idx = np.asarray(ff_idx, dtype=int)
+            else:
+                # no cont/cat factors -> single "empty" factorial row (we'll still combine with mixtures)
+                ff_idx = np.zeros((1, 0), dtype=int)
+
+            # Mixture lattice (unchanged logic, but use your generate_mixture_lattice) 
             if self.k_mix > 0:
                 mix_grids = self.generate_mixture_lattice()
             else:
-                mix_grids = [[None]]
+                mix_grids = [None]
 
-            for cont_vals in itertools.product(*grids):
-                for cat_vals in itertools.product(*cat_grids):
-                    for mix_vals in mix_grids:
-                        row = {}
+            n_cont = len(cont_grids)
+            n_cat = len(cat_grids)
 
-                        # continuous
-                        if cont_vals[0] is not None:
-                            for c, val in enumerate(cont_vals):
-                                name = (
-                                    self.cont_names[c]
-                                    if c < len(self.cont_names)
-                                    else f"cont{c+1}"
-                                )
-                                row[name] = val
+            # Map indices to actual values and combine with mixtures 
+            for row_idx in range(ff_idx.shape[0]):
+                idx_row = ff_idx[row_idx]
 
-                        # categorical
-                        if cat_vals[0] is not None:
-                            for c, val in enumerate(cat_vals):
-                                name = (
-                                    self.cat_defs[c][0]
-                                    if c < len(self.cat_defs)
-                                    else f"cat{c+1}"
-                                )
-                                row[name] = val
+                # build base row (cont + cat)
+                base_row = {}
 
-                        # mixture
-                        if mix_vals[0] is not None:
-                            for m, val in enumerate(mix_vals):
-                                name = (
-                                    self.mix_names[m]
-                                    if m < len(self.mix_names)
-                                    else f"mix{m+1}"
-                                )
-                                row[name] = val
+                # continuous mapping
+                for c in range(n_cont):
+                    idx = int(idx_row[c])
+                    val = cont_grids[c][idx]
+                    name = self.cont_names[c] if c < len(self.cont_names) else f"cont{c+1}"
+                    base_row[name] = float(val)
 
-                        factorial_candidates.append(row)
+                # categorical mapping
+                for c in range(n_cat):
+                    idx = int(idx_row[n_cont + c])
+                    levels = cat_grids[c]
+                    val = levels[idx]
+                    name = self.cat_defs[c][0] if c < len(self.cat_defs) else f"cat{c+1}"
+                    base_row[name] = val
+
+                # combine base_row with each mixture composition (or a single None)
+                for mix_vals in mix_grids:
+                    row = dict(base_row)  # copy
+                    if mix_vals is not None:
+                        for m, val in enumerate(mix_vals):
+                            name = self.mix_names[m] if m < len(self.mix_names) else f"mix{m+1}"
+                            row[name] = float(val)
+                    factorial_candidates.append(row)
 
             df_factorial = pd.DataFrame(factorial_candidates)
-
-            # Combine both sets
+            
+            # Combine both sets (random + factorial)
             df = pd.concat([df_random, df_factorial], ignore_index=True)
+
         else:
             df = df_random
 
