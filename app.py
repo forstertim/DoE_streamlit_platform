@@ -268,18 +268,22 @@ else:
 st.header("Define categorical factors (if any)")
 cat_defs = []
 if j > 0:
+    cols = st.columns(min(j, 4))
     for idx in range(j):
-        name = st.text_input(
-            f"Categorical name #{idx+1}", value=f"Cat{idx+1}", key=f"cat_name_{idx}"
-        )
-        levels_s = st.text_input(
-            f"Levels for {name} (comma-separated without spacing)",
-            value="A,B",
-            key=f"cat_levels_{idx}",
-            help="If a variable includes a space or special character, use an underscore!",
-        )
-        levels = [l.strip() for l in levels_s.split(",") if l.strip()]
-        cat_defs.append((name, levels))
+        with cols[idx % len(cols)]:
+            name = st.text_input(
+                f"Categorical name #{idx+1}",
+                value=f"Cat{idx+1}",
+                key=f"cat_name_{idx}",
+            )
+            levels_s = st.text_input(
+                f"Levels for {name} (comma-separated without spacing)",
+                value="A,B",
+                key=f"cat_levels_{idx}",
+                help="If a variable includes a space or special character, use an underscore!",
+            )
+            levels = [l.strip() for l in levels_s.split(",") if l.strip()]
+            cat_defs.append((name, levels))
 else:
     st.info("No categorical factors.")
 
