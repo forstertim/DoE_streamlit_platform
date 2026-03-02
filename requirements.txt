@@ -1,7 +1,7 @@
-altair
+altair==6.0.0
 numpy
 openpyxl
 pandas
 plotly
 pyDOE3
-streamlit
+streamlit==1.53.0
